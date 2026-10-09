@@ -14,32 +14,24 @@ from churn.config import settings
 class Features(BaseModel):
     model_config = {"extra": "forbid"}
 
-    gender: str
-    SeniorCitizen: int = Field(ge=0, le=1)
-    Partner: str
-    Dependents: str
-    tenure: int = Field(ge=0, le=120)
-    PhoneService: str
-    MultipleLines: str
-    InternetService: str
-    OnlineSecurity: str
-    OnlineBackup: str
-    DeviceProtection: str
-    TechSupport: str
-    StreamingTV: str
-    StreamingMovies: str
-    Contract: str
-    PaperlessBilling: str
-    PaymentMethod: str
-    MonthlyCharges: float = Field(gt=0)
-    TotalCharges: float | None = None
+    attack: int = Field(ge=1, le=255)
+    defense: int = Field(ge=1, le=255)
+    hp: int = Field(ge=1, le=255)
+    sp_attack: int = Field(ge=1, le=255)
+    sp_defense: int = Field(ge=1, le=255)
+    speed: int = Field(ge=1, le=255)
+    height_m: float = Field(gt=0, le=20.0)
+    weight_kg: float = Field(gt=0, le=1000.0)
+    percentage_male: float | None = Field(default=None, ge=0, le=100)
+    generation: int = Field(ge=1, le=9, description="Generation Pokémon")
+    type: str
 
 
 class Prediction(BaseModel):
     #model_config = {"protected_namespaces": ()}
 
     score: float
-    churn: bool
+    is_legendary: bool
     model_version: str
     request_id: str
     latency_ms: float
@@ -85,9 +77,9 @@ def predict(x: Features, bg: BackgroundTasks) -> Prediction:
 
     bg.add_task(db.save_prediction, request_id, payload, score, app.state.version, latency_ms)
 
-    churn = score >= app.state.meta["threshold"]
+    is_legendary = score >= app.state.meta["threshold"]
 
-    return Prediction(score=score, churn=churn, model_version = app.state.version, request_id=request_id, latency_ms=latency_ms)
+    return Prediction(score=score, is_legendary=is_legendary, model_version = app.state.version, request_id=request_id, latency_ms=latency_ms)
 
 
 
