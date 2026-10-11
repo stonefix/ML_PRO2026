@@ -65,7 +65,7 @@ def ready():
 
 
 @app.post("/v1/predict")
-def predict(x: Features, bg: BackgroundTasks, response: Response) -> Prediction:
+def predict(x: Features, bg: BackgroundTasks) -> Prediction:
     t0 = time.perf_counter()
     request_id = str(uuid.uuid4())
     payload = x.model_dump()  # x.dict() in pydantic v1
@@ -75,7 +75,7 @@ def predict(x: Features, bg: BackgroundTasks, response: Response) -> Prediction:
 
     latency_ms = round((time.perf_counter() - t0) * 1000, 2)
 
-    bg.add_task(db.save_prediction, request_id, payload, score, app.state.version, latency_ms, response.status_code)
+    bg.add_task(db.save_prediction, request_id, payload, score, app.state.version, latency_ms, 200)
 
     is_legendary = score >= app.state.meta["threshold"]
 
