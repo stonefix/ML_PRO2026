@@ -238,7 +238,7 @@ wheels = [
 ]
 
 [[package]]
-name = "churn-service"
+name = "pokemon-service"
 version = "0.4.7"
 source = { editable = "." }
 dependencies = [

@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: churn-service
+  name: pokemon-service
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: churn
+      app: pokemon
   template:
     metadata:
       labels:
-        app: churn
+        app: pokemon
     spec:
       containers:
         - name: api
-          image: churn-service:1.0
+          image: pokemon-service:1.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
           envFrom:
-            - configMapRef: {name: churn-config}
-            - secretRef: {name: churn-service}
+            - configMapRef: {name: pokemon-config}
+            - secretRef: {name: pokemon-service}
           startupProbe:
             httpGet: {path: /health, port: 8000}
             failureThreshold: 30

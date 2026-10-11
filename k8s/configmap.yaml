@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: churn-config
+  name: pokemon-config
 data:
   LOG_LEVEL: "INFO"
-  MODEL_PATH: artifacts/model.joblib
+  MODEL_PATH: artifacts/pokemon_logreg.joblib

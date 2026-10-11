@@ -7,8 +7,8 @@ import pandas as pd
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from churn import db
-from churn.config import settings
+from pokemon import db
+from pokemon.config import settings
 
 
 class Features(BaseModel):
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     app.state.pipeline = None
 
 
-app = FastAPI(title="churn-service", version="1.0", lifespan=lifespan)
+app = FastAPI(title="pokemon-service", version="1.0", lifespan=lifespan)
 
 @app.get("/health")
 def health():

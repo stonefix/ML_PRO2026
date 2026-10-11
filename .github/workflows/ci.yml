@@ -10,14 +10,14 @@ jobs:
     services:
       postgres:
         image: postgres:16
-        env: {POSTGRES_PASSWORD: test, POSTGRES_DB: churn}
+        env: {POSTGRES_PASSWORD: test, POSTGRES_DB: pokemon}
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postges"
           --health-interval 5s --health-timeout 3s --health-retries 10
       
     env:
-      DATABASE_URL: postgresql://postgres:test@localhost:5432/churn
+      DATABASE_URL: postgresql://postgres:test@localhost:5432/pokemon
 
 
     steps:
@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/churn-service/sha-${GITHUB_SHA}" >> "$GITHUB_ENV" #ghcr
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/pokemon-service/sha-${GITHUB_SHA}" >> "$GITHUB_ENV" #ghcr
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -60,7 +60,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/churn-service/sha-${GITHUB_SHA}" >> "$GITHUB_ENV" #ghcr
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/pokemon-service/sha-${GITHUB_SHA}" >> "$GITHUB_ENV" #ghcr
       - uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -80,9 +80,9 @@ jobs:
         env:
           DB_PASSWORD: $ {{ secrets.DB_PASSWORD }}
         run: |
-          kubectl create secret generic churn-secrets \
+          kubectl create secret generic pokemon-secrets \
           --from-literal=POSTGRES_PASSWORD="$DB_PASSWORD" \
-          --from-literal=DATABASE_URL="postgresql://postgres:$DB_PASSWORD@postgres:5432/churn"
+          --from-literal=DATABASE_URL="postgresql://postgres:$DB_PASSWORD@postgres:5432/pokemon"
       
       - name: база
         run: |
@@ -92,12 +92,12 @@ jobs:
       - name: сервис
         run: |
           kubectl apply -f k8s/
-          kubectl set image deploy/churn-service api="$IMAGE"
-          kubectl rollout status deploy/churn-service --timeout=120s
+          kubectl set image deploy/pokemon-service api="$IMAGE"
+          kubectl rollout status deploy/pokemon-service --timeout=120s
 
       - name: smoke
         run: |
-          kubectl port-forward svc/churn-service 8080:80 &
+          kubectl port-forward svc/pokemon-service 8080:80 &
           sleep 5
 
           curl --fail -s localhost:8080/health; echo
@@ -106,7 +106,7 @@ jobs:
           
           sleep 2
 
-          kubectl exec deploy/postgres --psql -U postges -d churn \
+          kubectl exec deploy/postgres --psql -U postges -d pokemon \
             -tc "SELECT count(*) FROM predictions" | grep -q 1
       
       - name: диагностика
@@ -114,8 +114,8 @@ jobs:
 
         run: |
           kubectl get pods -o wide
-          kubectl describe deploy/churn-service | tail -20
-          kubectl logs deploy/churn-service --tail=30 || true
+          kubectl describe deploy/pokemon-service | tail -20
+          kubectl logs deploy/pokemon-service --tail=30 || true
 
       
 
