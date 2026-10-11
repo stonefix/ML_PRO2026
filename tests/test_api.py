@@ -22,3 +22,7 @@ def test_missing_field_is_422(client, good_row):
 def test_extra_field_is_422(client, good_row):
     r = client.post("/v1/predict", json={**good_row, "hacker_field": 1})
     assert r.status_code == 422
+
+def test_wrong_http_method_get(client):
+    response = client.get("/v1/predict")
+    assert response.status_code == 405

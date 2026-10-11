@@ -17,3 +17,20 @@ def test_batch_and_single_agree(client, good_row):
     s1 = client.post("/v1/predict", json=good_row).json()["score"]
     s2 = client.post("/v1/predict", json=good_row).json()["score"]
     assert abs(s1 - s2) < 1e-12
+
+def test_boundary_values_min_acceptable(client):
+    payload = {
+        "attack": 1,
+        "defense": 1,
+        "hp": 1,
+        "sp_attack": 1,
+        "sp_defense": 1,
+        "speed": 1,
+        "height_m": 0.01,  # gt=0
+        "weight_kg": 0.01,  # gt=0
+        "percentage_male": 0,
+        "generation": 1,
+        "type": "fire"
+    }
+    response = client.post("/v1/predict", json=payload)
+    assert response.status_code == 200
