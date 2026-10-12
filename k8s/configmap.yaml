@@ -4,4 +4,4 @@ metadata:
   name: pokemon-config
 data:
   LOG_LEVEL: "INFO"
-  MODEL_PATH: artifacts/pokemon_logreg.joblib
+  MODEL_PATH: artifact/pokemon_logreg.joblib
