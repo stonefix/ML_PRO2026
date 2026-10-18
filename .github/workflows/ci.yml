@@ -73,6 +73,7 @@ jobs:
           docker pull "$IMAGE"
           kind load docker-image "$IMAGE" --name ci
 
+
       - name: подтягиваем секреты
         env:
           DB_PASSWORD: $ {{ secrets.DB_PASSWORD }}
