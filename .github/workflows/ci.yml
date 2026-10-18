@@ -51,63 +51,65 @@ jobs:
           cache-to: type=gha, node=max
 
   deploy:
-    - uses: actions/checkout@v7
-    - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/pokemon-service/sha-${GITHUB_SHA}" >> "GITHUB_ENV"
-    - uses: docker/login-action@v4
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-    - uses: helm/kind action@v1
-    - with: {cluster_name: ci}
-    - name: образ в кластер
-      run: |
-        docker pull "$IMAGE"
-        kind load docker-image "$IMAGE" --name cli
-    - name: подтягиваем секреты
-      env:
-        DB_PASSWORD: $ {{ secrets.DB_PASSWORD }}
-      run: |
-        kubectl create secret generic pokemon-secrets \
-        --from-literal=POSTGRES_PASSWORD="$DB_PASSWORD"
-        --from-literal=DATABASE_URL="postgresql://postgres:$DB_PASSWORD@postgres:5432/pokemon"
+    needs: build
+    runs-on: ubuntu-latest
 
-    - name: база
-      run: |
-        kubectl apply -f k8s/postgres.yaml
-        kubectl rollout status deploy/postgres --timeout-180s
+    permissions: {contents: read, packages: read}
 
-    - name: сервис
-      run: |
-        kubectl apply -f k8s/
-        kubectl set image deploy/pokemon-service api="$IMAGE"
-        kubectl rollout status deploy/pokemon-service --timeout=120s
+    steps:
+      - uses: actions/checkout@v7
+      - run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY_OWNER}/pokemon-service/sha-${GITHUB_SHA}" >> "$GITHUB_ENV" #ghcr
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: smoke
-      run: |
-        kubectl port-forward svc/pokemon-service 8080:80 &
-        sleep 5
+      - uses: helm/kind-action@v1
+        with: {cluster_name: ci}
 
-        curl --fail -s localhost:8080/health; echo
-        curl --fail -s -X POST localhost:8080/v1/predict \
-          -H "Content-Type: application/json" -d @good.json; echo
+      - name: образ в кластер
+        run: |
+          docker pull "$IMAGE"
+          kind load docker-image "$IMAGE" --name cli
 
-        kubectl exec deploy/postgres --psql -U postges -d pokemon \
-          -tc "SELECT count(*) FROM predictions" | grep -q 1
+      - name: подтягиваем секреты
+        env:
+          DB_PASSWORD: $ {{ secrets.DB_PASSWORD }}
+        run: |
+          kubectl create secret generic pokemon-secrets \
+          --from-literal=POSTGRES_PASSWORD="$DB_PASSWORD" \
+          --from-literal=DATABASE_URL="postgresql://postgres:$DB_PASSWORD@postgres:5432/pokemon"
+      
+      - name: база
+        run: |
+          kubectl apply -f k8s/postges.yaml
+          kubectl rollout status deploy/postges --timeout=180s
+      
+      - name: сервис
+        run: |
+          kubectl apply -f k8s/
+          kubectl set image deploy/pokemon-service api="$IMAGE"
+          kubectl rollout status deploy/pokemon-service --timeout=120s
 
-    - name: диагностика
-      if: failure()
+      - name: smoke
+        run: |
+          kubectl port-forward svc/pokemon-service 8080:80 &
+          sleep 5
 
-      run: |
-        kubectl get pods -o wide
-        kubectl describe deploy/pokemon-service | tail -20
-        kubectl logs deploy/pokemon-service --tail=30 || true
+          curl --fail -s localhost:8080/health; echo
+          curl --fail -s -X POST localhost:8080/v1/predict \
+            -H "Content-Type: application/json" -d @good.json; echo
+          
+          sleep 2
 
-    - uses: docker/setup-buildx-action@v4
-    - uses: docker/build-push-action@v4
-      with:
-        context: .
-        push: true
-        tags: ${{env.IMAGE}}
-        cache-from: type=gha
-        cache-to: type=gha, node=max
+          kubectl exec deploy/postgres --psql -U postges -d pokemon \
+            -tc "SELECT count(*) FROM predictions" | grep -q 1
+      
+      - name: диагностика
+        if: failure()
+
+        run: |
+          kubectl get pods -o wide
+          kubectl describe deploy/pokemon-service | tail -20
+          kubectl logs deploy/pokemon-service --tail=30 || true
