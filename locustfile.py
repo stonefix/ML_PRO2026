@@ -1,10 +1,11 @@
 import json
 from pathlib import Path
-from locust import HttpUser, task, between
+
+from locust import HttpUser, between, task
 
 GOOD_PAYLOAD_PATH = Path(__file__).parent / "good.json"
 
-with open(GOOD_PAYLOAD_PATH, "r", encoding="utf-8") as f:
+with open(GOOD_PAYLOAD_PATH, encoding="utf-8") as f:
     VALID_PREDICT_PAYLOAD = json.load(f)
 
 
